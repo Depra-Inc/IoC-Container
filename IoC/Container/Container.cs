@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: Apache-2.0
-// © 2022-2024 Nikolay Melnikov <n.melnikov@depra.org>
+// © 2022-2025 Depra <n.melnikov@depra.org>
 
 using System;
 using System.Collections;
@@ -94,7 +94,7 @@ namespace Depra.IoC
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private void FillDescriptors(IEnumerable<ServiceDescription> descriptors)
 		{
-			var descriptorsAsDictionary = (IDictionary<Type, ServiceDescription>) _descriptors;
+			IDictionary<Type, ServiceDescription> descriptorsAsDictionary = _descriptors;
 			var descriptorGroups = descriptors.GroupBy(x => x.Type);
 			foreach (var descriptorsGroup in descriptorGroups)
 			{

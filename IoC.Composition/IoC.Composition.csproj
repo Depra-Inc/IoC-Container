@@ -7,6 +7,11 @@
         <RootNamespace>Depra.IoC.Composition</RootNamespace>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <Optimize>true</Optimize>
+      <DebugType>embedded</DebugType>
+    </PropertyGroup>
+
     <ItemGroup>
       <ProjectReference Include="..\IoC.QoL\IoC.QoL.csproj" />
       <ProjectReference Include="..\IoC\IoC.csproj" />

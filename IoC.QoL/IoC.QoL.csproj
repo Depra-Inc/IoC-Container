@@ -4,6 +4,12 @@
         <TargetFramework>netstandard2.1</TargetFramework>
         <RootNamespace>Depra.IoC.QoL</RootNamespace>
         <AssemblyName>Depra.IoC.QoL</AssemblyName>
+        <LangVersion>9</LangVersion>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <Optimize>true</Optimize>
+      <DebugType>embedded</DebugType>
     </PropertyGroup>
 
     <ItemGroup>

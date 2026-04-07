@@ -3,9 +3,14 @@
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
         <LangVersion>9</LangVersion>
-        <Nullable>enable</Nullable>
+        <Nullable>disable</Nullable>
         <AssemblyName>Depra.IoC.Injection</AssemblyName>
         <RootNamespace>Depra.IoC.Injection</RootNamespace>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <Optimize>true</Optimize>
+      <DebugType>embedded</DebugType>
     </PropertyGroup>
 
     <ItemGroup>
