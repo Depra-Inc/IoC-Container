@@ -1,6 +1,7 @@
 ﻿// SPDX-License-Identifier: Apache-2.0
-// © 2022-2024 Nikolay Melnikov <n.melnikov@depra.org>
+// © 2022-2025 Depra <n.melnikov@depra.org>
 
+using System.Linq;
 using Depra.IoC.Activation;
 using Depra.IoC.Description;
 using Depra.IoC.Enums;
@@ -173,5 +174,56 @@ internal sealed class ContainerTests
 
 		// Assert:
 		service.Should().BeOfType<Mocks.EnumerableTestService>();
+	}
+
+	[Test]
+	public void ResolveType_WhenTypeConstructorHasEnumerableParameter_ThenResolvedTypeEqualsToRegisteredType(
+		[ValueSource(nameof(GetActivationBuilders))]
+		IActivationBuilder activationBuilder)
+	{
+		// Arrange:
+		var descriptors = new ServiceDescription[]
+		{
+			new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
+				type: typeof(IEnumerable<Mocks.EmptyGeneric>), implementationType: typeof(Mocks.EnumerableTestService)),
+			new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
+				type: typeof(Mocks.TestServiceWithEnumerableConstructor),
+				implementationType: typeof(Mocks.TestServiceWithEnumerableConstructor))
+		};
+		using var container = new Container(activationBuilder, descriptors);
+		var scope = container.CreateScope();
+
+		// Act:
+		var service = scope.Resolve<Mocks.TestServiceWithEnumerableConstructor>();
+
+		// Assert:
+		service.Should().BeOfType<Mocks.TestServiceWithEnumerableConstructor>();
+	}
+
+	[Test]
+	public void ResolveMultiple_WhenTypeIsEnumerable_ThenResolvedTypesEqualsToRegisteredTypes(
+		[ValueSource(nameof(GetActivationBuilders))]
+		IActivationBuilder activationBuilder)
+	{
+		// Arrange:
+		var descriptor = new MultipleServicesDescription(lifetime: LifetimeType.TRANSIENT,
+			type: typeof(IEnumerable<Mocks.ITestService>), descriptors:
+			[
+				new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
+					type: typeof(Mocks.ITestService), implementationType: typeof(Mocks.TestService)),
+				new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
+					type: typeof(Mocks.ITestService), implementationType: typeof(Mocks.TestServiceWithEmptyConstructor))
+			]);
+
+		using var container = new Container(activationBuilder, [descriptor]);
+		var scope = container.CreateScope();
+
+		// Act:
+		var services = scope.Resolve<IEnumerable<Mocks.ITestService>>().ToArray();
+
+		// Assert:
+		services.Length.Should().Be(2);
+		services[0].Should().BeOfType<Mocks.TestService>();
+		services[1].Should().BeOfType<Mocks.TestServiceWithEmptyConstructor>();
 	}
 }

@@ -52,4 +52,15 @@ internal static class Mocks
 	{
 		public TestServiceWithEmptyConstructor() { }
 	}
+
+	internal sealed class TestServiceWithEnumerableConstructor : ITestService
+	{
+		public TestServiceWithEnumerableConstructor(IEnumerable<EmptyGeneric> items)
+		{
+			if (items == null)
+			{
+				throw new NullReferenceException();
+			}
+		}
+	}
 }
