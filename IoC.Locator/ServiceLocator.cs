@@ -10,10 +10,12 @@ using Depra.IoC.Scope;
 namespace Depra.IoC.Locator
 {
 	/// <summary>
-	/// Global entry point for initializing and disposing the service locator.
+	/// Setup API: initializes and frees the global scope.
 	/// </summary>
 	public static class ServiceLocator
 	{
+		private static readonly object LOCK = new();
+
 		public static void Initialize(IScope globalScope)
 		{
 			if (globalScope == null)
@@ -21,20 +23,19 @@ namespace Depra.IoC.Locator
 				throw new ArgumentNullException(nameof(globalScope));
 			}
 
-			if (Service.GlobalScope != null)
+			lock (LOCK)
 			{
-				throw new AlreadyInitializedException();
+				if (Service.CurrentScope != null)
+				{
+					throw new InvalidOperationException(
+						"ServiceLocator is already initialized. " +
+						"Call 'ServiceLocator.Reset' to reset it.");
+				}
+
+				Service.SetScope(globalScope);
 			}
-
-			Service.GlobalScope = globalScope;
 		}
 
-		public static void Dispose() => Service.GlobalScope = null!;
-
-		internal sealed class AlreadyInitializedException : InvalidOperationException
-		{
-			public AlreadyInitializedException() : base("ServiceLocator is already initialized. " +
-			                                            $"Call '{nameof(ServiceLocator)}.{nameof(Dispose)}' to reset it.") { }
-		}
+		public static void Reset() => Service.SetScope(null);
 	}
 }
