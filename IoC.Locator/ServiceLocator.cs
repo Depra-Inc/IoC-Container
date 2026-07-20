@@ -16,26 +16,25 @@ namespace Depra.IoC.Locator
 	{
 		private static readonly object LOCK = new();
 
-		public static void Initialize(IScope globalScope)
+		public static void Initialize(IScope scope)
 		{
-			if (globalScope == null)
+			if (scope == null)
 			{
-				throw new ArgumentNullException(nameof(globalScope));
+				throw new ArgumentNullException(nameof(scope));
 			}
 
 			lock (LOCK)
 			{
-				if (Service.CurrentScope != null)
-				{
-					throw new InvalidOperationException(
-						"ServiceLocator is already initialized. " +
-						"Call 'ServiceLocator.Reset' to reset it.");
-				}
-
-				Service.SetScope(globalScope);
+				Service.SetScope(scope);
 			}
 		}
 
-		public static void Reset() => Service.SetScope(null);
+		public static void Reset()
+		{
+			lock (LOCK)
+			{
+				Service.SetScope(null);
+			}
+		}
 	}
 }
