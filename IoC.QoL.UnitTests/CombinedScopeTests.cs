@@ -1,4 +1,7 @@
-﻿using Depra.IoC.Activation;
+﻿// SPDX-License-Identifier: Apache-2.0
+// © 2022-2026 Depra <n.melnikov@depra.org>
+
+using Depra.IoC.Activation;
 using Depra.IoC.QoL.Builder;
 using Depra.IoC.QoL.Scope;
 using Depra.IoC.Scope;
@@ -8,7 +11,7 @@ namespace Depra.IoC.QoL.UnitTests;
 internal sealed class CombinedScopeTests
 {
 	[Test]
-	public void ResolveTypeFromRootScope_WhenTypeConstructorIsEmpty_ThenResolvedTypeEqualsToRegisteredType()
+	public void ResolveFromRootScope_WhenEmptyCtor_ThenReturnsType()
 	{
 		// Arrange:
 		var activation = new LambdaBasedActivationBuilder();
@@ -28,7 +31,7 @@ internal sealed class CombinedScopeTests
 	}
 
 	[Test]
-	public void ResolveTypeFromRootScope_WhenTypeConstructorIsNotEmpty_ThenResolvedTypeEqualsToRegisteredType()
+	public void ResolveFromRootScope_WhenCtorHasDependency_ThenReturnsType()
 	{
 		// Arrange:
 		var activation = new LambdaBasedActivationBuilder();
