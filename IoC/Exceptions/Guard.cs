@@ -11,13 +11,28 @@ namespace Depra.IoC.Exceptions
 	{
 		[Conditional(Conditional.ENSURE)]
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void AgainstNull(object value, string parameterName) =>
-			AgainstNull(value, () => new ArgumentNullException(parameterName));
+		public static void AgainstNull(object value, string parameterName)
+		{
+			if (value == null)
+			{
+				throw new ArgumentNullException(parameterName);
+			}
+		}
 
 		[Conditional(Conditional.ENSURE)]
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void AgainstNull(object value, Func<Exception> exception) =>
 			Against(value == null, exception);
+
+		[Conditional(Conditional.ENSURE)]
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void AgainstNotRegistered(object value, Type serviceType)
+		{
+			if (value == null)
+			{
+				throw new UnableFindRegistration(serviceType);
+			}
+		}
 
 		[Conditional(Conditional.ENSURE)]
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -39,7 +54,7 @@ namespace Depra.IoC.Exceptions
 #if DEBUG || DEV_BUILD
 			public const string ENSURE = TRUE;
 #else
-		public const string ENSURE = FALSE;
+			public const string ENSURE = FALSE;
 #endif
 		}
 	}

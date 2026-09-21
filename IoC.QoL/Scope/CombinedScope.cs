@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Depra.IoC.Scope;
 
@@ -17,6 +18,11 @@ namespace Depra.IoC.QoL.Scope
 		{
 			_scopes = scopes;
 			_rootScope = root;
+
+			foreach (var scope in _scopes)
+			{
+				SetParentScope(scope, root);
+			}
 		}
 
 		bool IScope.CanResolve(Type service) =>
@@ -39,6 +45,22 @@ namespace Depra.IoC.QoL.Scope
 			}
 
 			throw new InvalidOperationException();
+		}
+
+		private static void SetParentScope(IScope scope, IScope parentScope)
+		{
+			if (scope == null || parentScope == null)
+			{
+				return;
+			}
+
+			var parentField = scope.GetType().GetField("_parentScope", BindingFlags.Instance | BindingFlags.NonPublic);
+			if (parentField == null)
+			{
+				return;
+			}
+
+			parentField.SetValue(scope, parentScope);
 		}
 
 		void IDisposable.Dispose()

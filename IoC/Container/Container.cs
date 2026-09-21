@@ -60,7 +60,7 @@ namespace Depra.IoC
 					: null;
 			}
 
-			if (service.IsConstructedGenericType == false)
+			if (!service.IsConstructedGenericType)
 			{
 				return null;
 			}
@@ -134,10 +134,12 @@ namespace Depra.IoC
 			private readonly Container _container;
 			private readonly ConcurrentStack<object> _disposables;
 			private readonly ConcurrentDictionary<ServiceDescription, object> _scopedInstances;
+			private readonly IScope _parentScope;
 
-			public Scope(Container container)
+			public Scope(Container container, IScope parentScope = null)
 			{
 				_container = container;
+				_parentScope = parentScope;
 				_disposables = new ConcurrentStack<object>();
 				_scopedInstances = new ConcurrentDictionary<ServiceDescription, object>();
 			}
@@ -175,23 +177,38 @@ namespace Depra.IoC
 				}
 			}
 
-			public bool CanResolve(Type service) => _container.FindDescriptor(service) != null;
+			public bool CanResolve(Type service) =>
+				_container.FindDescriptor(service) != null ||
+				(_parentScope != null && _parentScope.CanResolve(service));
 
 			public object Resolve(Type service)
 			{
 				var descriptor = _container.FindDescriptor(service);
-				Guard.AgainstNull(descriptor, () => new UnableFindRegistration(service));
+				if (descriptor == null && _parentScope != null)
+				{
+					return _parentScope.Resolve(service);
+				}
+
+				Guard.AgainstNotRegistered(descriptor, service);
 
 				return ResolveInternal(descriptor);
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			internal object ResolveInternal(ServiceDescription description) =>
-				description.Lifetime == LifetimeType.TRANSIENT
-					? CreateInstance(description)
-					: description.Lifetime == LifetimeType.SCOPED || _container._rootScope == this
-						? _scopedInstances.GetOrAdd(description, _ => CreateInstance(description))
-						: _container._rootScope.ResolveInternal(description);
+			internal object ResolveInternal(ServiceDescription description)
+			{
+				if (description.Lifetime == LifetimeType.TRANSIENT)
+				{
+					return CreateInstance(description);
+				}
+
+				if (description.Lifetime == LifetimeType.SCOPED || _container._rootScope == this)
+				{
+					return _scopedInstances.GetOrAdd(description, _ => CreateInstance(description));
+				}
+
+				return _container._rootScope.ResolveInternal(description);
+			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			private object CreateInstance(ServiceDescription description)
