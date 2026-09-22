@@ -21,26 +21,11 @@ namespace Depra.IoC.Exceptions
 
 		[Conditional(Conditional.ENSURE)]
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void AgainstNull(object value, Func<Exception> exception) =>
-			Against(value == null, exception);
-
-		[Conditional(Conditional.ENSURE)]
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void AgainstNotRegistered(object value, Type serviceType)
 		{
 			if (value == null)
 			{
 				throw new UnableFindRegistration(serviceType);
-			}
-		}
-
-		[Conditional(Conditional.ENSURE)]
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void Against(bool condition, Func<Exception> exception)
-		{
-			if (condition)
-			{
-				throw exception();
 			}
 		}
 

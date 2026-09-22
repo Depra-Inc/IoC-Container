@@ -31,6 +31,27 @@ internal sealed class CombinedScopeTests
 	}
 
 	[Test]
+	public void ResolveType_WhenCtorHasDependencyFromRootScope_ThenReturnsType()
+	{
+		// Arrange:
+		var activation = new LambdaBasedActivationBuilder();
+		var combinedScope = new CombinedScope(new ContainerBuilder(activation)
+				.RegisterSingleton<Mocks.TestServiceWithConstructor.Token>()
+				.Build().CreateScope(),
+			new ContainerBuilder(activation)
+				.RegisterSingleton<Mocks.TestService>()
+				.RegisterSingleton<Mocks.TestServiceWithConstructor>()
+				.Build().CreateScope());
+
+		// Act:
+		var resolved = combinedScope.Resolve<Mocks.TestServiceWithConstructor>();
+
+		// Assert:
+		resolved.Should().NotBeNull();
+		resolved.Should().BeOfType<Mocks.TestServiceWithConstructor>();
+	}
+
+	[Test]
 	public void ResolveFromRootScope_WhenCtorHasDependency_ThenReturnsType()
 	{
 		// Arrange:

@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: Apache-2.0
-// © 2022-2025 Depra <n.melnikov@depra.org>
+// © 2022-2026 Depra <n.melnikov@depra.org>
 
 using System;
 using System.Collections;
@@ -42,7 +42,7 @@ namespace Depra.IoC
 			.DisposeAsync()
 			.ConfigureAwait(false);
 
-		public IScope CreateScope() => new Scope(this);
+		public IScope CreateScope() => new Scope(this, _rootScope);
 
 		private ServiceDescription FindDescriptor(Type service)
 		{
@@ -190,7 +190,6 @@ namespace Depra.IoC
 				}
 
 				Guard.AgainstNotRegistered(descriptor, service);
-
 				return ResolveInternal(descriptor);
 			}
 
@@ -202,12 +201,28 @@ namespace Depra.IoC
 					return CreateInstance(description);
 				}
 
-				if (description.Lifetime == LifetimeType.SCOPED || _container._rootScope == this)
+				if (ShouldCacheInstanceInCurrentScope(description))
 				{
 					return _scopedInstances.GetOrAdd(description, _ => CreateInstance(description));
 				}
 
 				return _container._rootScope.ResolveInternal(description);
+			}
+
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			private bool ShouldCacheInstanceInCurrentScope(ServiceDescription description)
+			{
+				if (description.Lifetime == LifetimeType.SCOPED)
+				{
+					return true;
+				}
+
+				if (_container._rootScope == this)
+				{
+					return true;
+				}
+
+				return _parentScope != null && _parentScope != _container._rootScope;
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
