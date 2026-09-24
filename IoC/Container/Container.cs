@@ -33,7 +33,9 @@ namespace Depra.IoC
 			_descriptors = new ConcurrentDictionary<Type, ServiceDescription>();
 			_buildActivators = new ConcurrentDictionary<ServiceDescription, Func<IScope, object>>();
 
-			FillDescriptors(descriptors);
+			var descriptorsArray = descriptors.ToArray();
+			FillDescriptors(descriptorsArray);
+			InitializeNonLazyDescriptors(descriptorsArray);
 		}
 
 		public void Dispose() => _rootScope.Dispose();
@@ -67,14 +69,14 @@ namespace Depra.IoC
 
 			var genericTypeDefinition = service.GetGenericTypeDefinition();
 			var genericDescriptor = FindDescriptor(genericTypeDefinition);
-			if (genericDescriptor is not TypeBasedServiceDescription typeBased)
+			if (genericDescriptor is not TypeServiceDescription typeBased)
 			{
 				return null;
 			}
 
 			var genericArguments = service.GetGenericArguments();
 			var genericType = typeBased.ImplementationType.MakeGenericType(genericArguments);
-			var argumentsDescriptor = new TypeBasedServiceDescription(genericType, service, typeBased.Lifetime);
+			var argumentsDescriptor = new TypeServiceDescription(genericType, service, typeBased.Lifetime);
 
 			return _descriptors.GetOrAdd(genericType, argumentsDescriptor);
 		}
@@ -86,9 +88,9 @@ namespace Depra.IoC
 		private static Func<IScope, object> BuildActivation(ServiceDescription serviceDescription,
 			IActivationBuilder activationBuilder) => serviceDescription switch
 		{
-			InstanceBasedServiceDescription instanceBased => _ => instanceBased.Instance,
-			FactoryBasedServiceDescription factoryBased => factoryBased.Func,
-			_ => activationBuilder.BuildActivation((TypeBasedServiceDescription) serviceDescription)
+			InstanceServiceDescription instanceBased => _ => instanceBased.Instance,
+			FactoryServiceDescription factoryBased => factoryBased.Func,
+			_ => activationBuilder.BuildActivation((TypeServiceDescription) serviceDescription)
 		};
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -112,11 +114,25 @@ namespace Depra.IoC
 					descriptorsAsDictionary.Add(serviceType, BuildUsingMultipleDescriptor(serviceType, multiple));
 				}
 			}
+
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private void InitializeNonLazyDescriptors(ServiceDescription[] descriptors)
+		{
+			for (int index = 0, count = descriptors.Length; index < count; index++)
+			{
+				var descriptor = descriptors[index];
+				if (!descriptor.IsLazy)
+				{
+					_rootScope.ResolveInternal(descriptor);
+				}
+			}
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private static ServiceDescription BuildUsingMultipleDescriptor(Type serviceType, ServiceDescription description) =>
-			new FactoryBasedServiceDescription(serviceType, LifetimeType.TRANSIENT, scope =>
+			new FactoryServiceDescription(serviceType, LifetimeType.TRANSIENT, scope =>
 			{
 				var items = (description as MultipleServicesDescription)?.Descriptors ?? new[] { description };
 				var scopeImpl = (Scope) scope;

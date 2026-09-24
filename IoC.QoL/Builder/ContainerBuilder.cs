@@ -27,5 +27,16 @@ namespace Depra.IoC.QoL.Builder
 		public IContainer Build() => new Container(_activationBuilder, _descriptions);
 
 		public void Register(ServiceDescription description) => _descriptions.Add(description);
+
+		public IContainerBuilder NonLazy()
+		{
+			if (_descriptions.Count == 0)
+			{
+				throw new InvalidOperationException("No registration is available to mark as non-lazy.");
+			}
+
+			_descriptions[^1].IsLazy = false;
+			return this;
+		}
 	}
 }

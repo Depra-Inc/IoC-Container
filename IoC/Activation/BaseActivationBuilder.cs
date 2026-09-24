@@ -14,7 +14,7 @@ namespace Depra.IoC.Activation
 	{
 		public Func<IScope, object> BuildActivation(ServiceDescription description)
 		{
-			var typeBased = (TypeBasedServiceDescription) description;
+			var typeBased = (TypeServiceDescription) description;
 			var constructor = typeBased.ImplementationType
 				.GetConstructors(BindingFlags.Public | BindingFlags.Instance)
 				.FirstOrDefault();

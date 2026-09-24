@@ -155,4 +155,22 @@ internal sealed class ContainerBuilderTests
 		// Assert:
 		service.Should().BeOfType<Mocks.EnumerableTestService>();
 	}
+
+	[Test]
+	public void Build_WhenSingletonIsRegisteredAsNonLazy_ThenServiceIsCreatedImmediately(
+		[ValueSource(nameof(GetActivationBuilders))]
+		IActivationBuilder activationBuilder)
+	{
+		// Arrange:
+		Mocks.NonLazyTestService.CreationCount = 0;
+
+		// Act:
+		using var container = new ContainerBuilder(activationBuilder)
+			.RegisterSingleton<Mocks.NonLazyTestService>()
+			.NonLazy()
+			.Build();
+
+		// Assert:
+		Mocks.NonLazyTestService.CreationCount.Should().Be(1);
+	}
 }

@@ -8,13 +8,15 @@ namespace Depra.IoC.Description
 {
     public abstract class ServiceDescription
     {
-        protected ServiceDescription(Type type, LifetimeType lifetime)
+        protected ServiceDescription(Type type, LifetimeType lifetime, bool lazy = true)
         {
             Type = type;
             Lifetime = lifetime;
+            IsLazy = lazy;
         }
 
         public Type Type { get; }
         public LifetimeType Lifetime { get; }
+        public bool IsLazy { get; internal set; }
     }
 }
