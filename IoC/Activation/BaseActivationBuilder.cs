@@ -14,12 +14,15 @@ namespace Depra.IoC.Activation
 	{
 		public Func<IScope, object> BuildActivation(ServiceDescription description)
 		{
-			var typeBased = (TypeBasedServiceDescription) description;
+			var typeBased = (TypeServiceDescription) description;
 			var constructor = typeBased.ImplementationType
 				.GetConstructors(BindingFlags.Public | BindingFlags.Instance)
 				.FirstOrDefault();
 
-			Guard.AgainstNull(constructor, () => new SuitableConstructorNotFound(typeBased.ImplementationType));
+			if (constructor == null)
+			{
+				throw new SuitableConstructorNotFound(typeBased.ImplementationType);
+			}
 
 			var args = constructor!.GetParameters();
 			return BuildActivation(constructor, args);

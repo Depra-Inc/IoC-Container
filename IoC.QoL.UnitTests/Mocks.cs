@@ -54,4 +54,11 @@ internal static class Mocks
 	{
 		public TestServiceWithEmptyConstructor() { }
 	}
+
+	internal sealed class NonLazyTestService
+	{
+		public static int CreationCount { get; set; }
+
+		public NonLazyTestService() => CreationCount++;
+	}
 }

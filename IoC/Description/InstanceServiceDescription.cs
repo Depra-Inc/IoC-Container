@@ -7,9 +7,10 @@ using Depra.IoC.Exceptions;
 
 namespace Depra.IoC.Description
 {
-	public sealed class InstanceBasedServiceDescription : ServiceDescription
+	public sealed class InstanceServiceDescription : ServiceDescription
 	{
-		public InstanceBasedServiceDescription(Type type, object instance) : base(type, LifetimeType.SINGLETON)
+		public InstanceServiceDescription(Type type, object instance, bool lazy = true) :
+			base(type, LifetimeType.SINGLETON, lazy)
 		{
 			Guard.AgainstNull(instance, nameof(instance));
 			Instance = instance;

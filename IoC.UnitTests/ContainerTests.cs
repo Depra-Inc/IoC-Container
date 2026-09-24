@@ -34,7 +34,7 @@ internal sealed class ContainerTests
 		// Arrange:
 		var implementationType = typeof(Mocks.TestService);
 		var descriptors = new ServiceDescription[]
-			{ new TypeBasedServiceDescription(implementationType, implementationType, lifetime) };
+			{ new TypeServiceDescription(implementationType, implementationType, lifetime) };
 		using var container = new Container(activationBuilder, descriptors);
 		var scope = container.CreateScope();
 
@@ -55,7 +55,7 @@ internal sealed class ContainerTests
 		var interfaceType = typeof(Mocks.ITestService);
 		var implementationType = typeof(Mocks.TestService);
 		var descriptors = new ServiceDescription[]
-			{ new TypeBasedServiceDescription(implementationType, interfaceType, lifetime) };
+			{ new TypeServiceDescription(implementationType, interfaceType, lifetime) };
 		using var container = new Container(activationBuilder, descriptors);
 		var scope = container.CreateScope();
 
@@ -64,6 +64,26 @@ internal sealed class ContainerTests
 
 		// Assert:
 		service.Should().BeOfType(implementationType);
+	}
+
+	[Test]
+	public void Build_WhenTypeDescriptionIsNonLazy_ThenServiceIsCreatedImmediately(
+		[ValueSource(nameof(GetActivationBuilders))]
+		IActivationBuilder activationBuilder)
+	{
+		// Arrange:
+		Mocks.NonLazyTestService.CreationCount = 0;
+		var descriptors = new ServiceDescription[]
+		{
+			new TypeServiceDescription(typeof(Mocks.NonLazyTestService),
+				typeof(Mocks.NonLazyTestService), LifetimeType.SINGLETON, lazy: false)
+		};
+
+		// Act:
+		using var container = new Container(activationBuilder, descriptors);
+
+		// Assert:
+		Mocks.NonLazyTestService.CreationCount.Should().Be(1);
 	}
 #if DEBUG
 	[Test]
@@ -93,7 +113,7 @@ internal sealed class ContainerTests
 		var interfaceType = typeof(Mocks.ITestService);
 		var implementationType = typeof(Mocks.TestServiceWithEmptyConstructor);
 		var descriptors = new ServiceDescription[]
-			{ new TypeBasedServiceDescription(implementationType, interfaceType, LIFETIME) };
+			{ new TypeServiceDescription(implementationType, interfaceType, LIFETIME) };
 		using var container = new Container(activationBuilder, descriptors);
 		var scope = container.CreateScope();
 
@@ -112,10 +132,10 @@ internal sealed class ContainerTests
 		// Arrange:
 		var descriptors = new ServiceDescription[]
 		{
-			new TypeBasedServiceDescription(lifetime: LifetimeType.SINGLETON,
+			new TypeServiceDescription(lifetime: LifetimeType.SINGLETON,
 				type: typeof(Mocks.TestServiceWithConstructor.Token),
 				implementationType: typeof(Mocks.TestServiceWithConstructor.Token)),
-			new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
+			new TypeServiceDescription(lifetime: LifetimeType.TRANSIENT,
 				type: typeof(Mocks.ITestService),
 				implementationType: typeof(Mocks.TestServiceWithConstructor))
 		};
@@ -137,9 +157,9 @@ internal sealed class ContainerTests
 		// Arrange:
 		var descriptors = new ServiceDescription[]
 		{
-			new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
+			new TypeServiceDescription(lifetime: LifetimeType.TRANSIENT,
 				type: typeof(Mocks.EmptyGeneric), implementationType: typeof(Mocks.EmptyGeneric)),
-			new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
+			new TypeServiceDescription(lifetime: LifetimeType.TRANSIENT,
 				type: typeof(Mocks.GenericTestService<Mocks.EmptyGeneric>),
 				implementationType: typeof(Mocks.GenericTestService<Mocks.EmptyGeneric>))
 		};
@@ -161,9 +181,9 @@ internal sealed class ContainerTests
 		// Arrange:
 		var descriptors = new ServiceDescription[]
 		{
-			new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
+			new TypeServiceDescription(lifetime: LifetimeType.TRANSIENT,
 				type: typeof(Mocks.EmptyGeneric), implementationType: typeof(Mocks.EmptyGeneric)),
-			new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
+			new TypeServiceDescription(lifetime: LifetimeType.TRANSIENT,
 				type: typeof(Mocks.EnumerableTestService), implementationType: typeof(Mocks.EnumerableTestService))
 		};
 		using var container = new Container(activationBuilder, descriptors);
@@ -184,9 +204,9 @@ internal sealed class ContainerTests
 		// Arrange:
 		var descriptors = new ServiceDescription[]
 		{
-			new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
+			new TypeServiceDescription(lifetime: LifetimeType.TRANSIENT,
 				type: typeof(IEnumerable<Mocks.EmptyGeneric>), implementationType: typeof(Mocks.EnumerableTestService)),
-			new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
+			new TypeServiceDescription(lifetime: LifetimeType.TRANSIENT,
 				type: typeof(Mocks.TestServiceWithEnumerableConstructor),
 				implementationType: typeof(Mocks.TestServiceWithEnumerableConstructor))
 		};
@@ -209,9 +229,9 @@ internal sealed class ContainerTests
 		var descriptor = new MultipleServicesDescription(lifetime: LifetimeType.TRANSIENT,
 			type: typeof(IEnumerable<Mocks.ITestService>), descriptors:
 			[
-				new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
+				new TypeServiceDescription(lifetime: LifetimeType.TRANSIENT,
 					type: typeof(Mocks.ITestService), implementationType: typeof(Mocks.TestService)),
-				new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
+				new TypeServiceDescription(lifetime: LifetimeType.TRANSIENT,
 					type: typeof(Mocks.ITestService), implementationType: typeof(Mocks.TestServiceWithEmptyConstructor))
 			]);
 

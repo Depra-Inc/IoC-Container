@@ -13,5 +13,7 @@ namespace Depra.IoC.QoL.Builder
 		bool Exists(Type service);
 
 		void Register(ServiceDescription description);
+
+		IContainerBuilder NonLazy();
 	}
 }

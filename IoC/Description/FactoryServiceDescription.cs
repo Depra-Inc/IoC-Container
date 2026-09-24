@@ -8,9 +8,10 @@ using Depra.IoC.Scope;
 
 namespace Depra.IoC.Description
 {
-	public sealed class FactoryBasedServiceDescription : ServiceDescription
+	public sealed class FactoryServiceDescription : ServiceDescription
 	{
-		public FactoryBasedServiceDescription(Type type, LifetimeType lifetime, Func<IScope, object> func) : base(type, lifetime)
+		public FactoryServiceDescription(Type type, LifetimeType lifetime, Func<IScope, object> func, bool lazy = true) :
+			base(type, lifetime, lazy)
 		{
 			Guard.AgainstNull(func, nameof(func));
 			Func = func;
