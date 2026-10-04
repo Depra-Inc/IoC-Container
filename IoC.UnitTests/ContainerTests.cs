@@ -226,4 +226,30 @@ internal sealed class ContainerTests
 		services[0].Should().BeOfType<Mocks.TestService>();
 		services[1].Should().BeOfType<Mocks.TestServiceWithEmptyConstructor>();
 	}
+
+	[Test]
+	public void ResolveNonLazy_WhenNonLazyTypeHasDependencyInParentScope_ThenResolvedTypeEqualsToRegisteredType(
+		[ValueSource(nameof(GetActivationBuilders))]
+		IActivationBuilder activationBuilder)
+	{
+		// Arrange:
+		var parentContainer = new Container(activationBuilder, [
+			new TypeBasedServiceDescription(typeof(Mocks.TestServiceWithConstructor.Token),
+				typeof(Mocks.TestServiceWithConstructor.Token), LifetimeType.SINGLETON)
+		]);
+		var parentScope = parentContainer.CreateScope();
+		var childServiceDescription = new TypeBasedServiceDescription(typeof(Mocks.TestServiceWithConstructor),
+			typeof(Mocks.ITestService), LifetimeType.SINGLETON)
+		{
+			NonLazy = true
+		};
+		var childContainer = new Container(activationBuilder, [childServiceDescription]);
+
+		// Act:
+		var childScope = childContainer.CreateScope(parentScope);
+		var resolvedService = childScope.Resolve<Mocks.ITestService>();
+
+		// Assert:
+		resolvedService.Should().BeOfType<Mocks.TestServiceWithConstructor>();
+	}
 }

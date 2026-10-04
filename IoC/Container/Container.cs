@@ -34,7 +34,6 @@ namespace Depra.IoC
 			_buildActivators = new ConcurrentDictionary<ServiceDescription, Func<IScope, object>>();
 
 			FillDescriptors(descriptors);
-			ResolveNonLazy();
 		}
 
 		public void Dispose() => _rootScope.Dispose();
@@ -43,7 +42,21 @@ namespace Depra.IoC
 			.DisposeAsync()
 			.ConfigureAwait(false);
 
-		public IScope CreateScope() => new Scope(this, _rootScope);
+		public IScope CreateScope()
+		{
+			var scope = new Scope(this, _rootScope);
+			ResolveNonLazy(scope);
+
+			return scope;
+		}
+
+		public IScope CreateScope(IScope parentScope)
+		{
+			var scope = new Scope(this, parentScope);
+			ResolveNonLazy(scope);
+
+			return scope;
+		}
 
 		private ServiceDescription FindDescriptor(Type service)
 		{
@@ -78,18 +91,6 @@ namespace Depra.IoC
 			var argumentsDescriptor = new TypeBasedServiceDescription(genericType, service, typeBased.Lifetime);
 
 			return _descriptors.GetOrAdd(genericType, argumentsDescriptor);
-		}
-
-		private void ResolveNonLazy()
-		{
-			var resolved = new HashSet<ServiceDescription>();
-			foreach (var descriptor in _descriptors.Values)
-			{
-				if (descriptor.NonLazy && resolved.Add(descriptor))
-				{
-					_rootScope.ResolveInternal(descriptor);
-				}
-			}
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -142,6 +143,19 @@ namespace Depra.IoC
 
 				return array;
 			});
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private void ResolveNonLazy(Scope scope)
+		{
+			var resolved = new HashSet<ServiceDescription>();
+			foreach (var description in _descriptors.Values)
+			{
+				if (description.NonLazy && resolved.Add(description))
+				{
+					scope.ResolveInternal(description);
+				}
+			}
+		}
 
 		private sealed class Scope : IScope
 		{
