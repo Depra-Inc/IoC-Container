@@ -101,6 +101,7 @@ namespace Depra.IoC
 		{
 			InstanceBasedServiceDescription instanceBased => _ => instanceBased.Instance,
 			FactoryBasedServiceDescription factoryBased => factoryBased.Func,
+			MultipleServicesDescription multiple => BuildUsingMultipleDescriptor(multiple.Type, multiple).Func,
 			_ => activationBuilder.BuildActivation((TypeBasedServiceDescription) serviceDescription)
 		};
 
@@ -128,8 +129,8 @@ namespace Depra.IoC
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private static ServiceDescription BuildUsingMultipleDescriptor(Type serviceType, ServiceDescription description) =>
-			new FactoryBasedServiceDescription(serviceType, LifetimeType.TRANSIENT, scope =>
+		private static FactoryBasedServiceDescription BuildUsingMultipleDescriptor(Type serviceType, ServiceDescription description) =>
+			new(serviceType, LifetimeType.TRANSIENT, scope =>
 			{
 				var items = (description as MultipleServicesDescription)?.Descriptors ?? new[] { description };
 				var scopeImpl = (Scope) scope;
@@ -207,36 +208,16 @@ namespace Depra.IoC
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			internal object ResolveInternal(ServiceDescription description)
+			internal object ResolveInternal(ServiceDescription description) => description.Lifetime switch
 			{
-				if (description.Lifetime == LifetimeType.TRANSIENT)
-				{
-					return CreateInstance(description);
-				}
-
-				if (ShouldCacheInstanceInCurrentScope(description))
-				{
-					return _scopedInstances.GetOrAdd(description, _ => CreateInstance(description));
-				}
-
-				return _container._rootScope.ResolveInternal(description);
-			}
+				LifetimeType.TRANSIENT => CreateInstance(description),
+				LifetimeType.SCOPED => _scopedInstances.GetOrAdd(description, _ => CreateInstance(description)),
+				_ => _container._rootScope.GetOrCreateSingleton(description, this)
+			};
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			private bool ShouldCacheInstanceInCurrentScope(ServiceDescription description)
-			{
-				if (description.Lifetime == LifetimeType.SCOPED)
-				{
-					return true;
-				}
-
-				if (_container._rootScope == this)
-				{
-					return true;
-				}
-
-				return _parentScope != null && _parentScope != _container._rootScope;
-			}
+			private object GetOrCreateSingleton(ServiceDescription description, IScope activationScope) => 
+				_scopedInstances.GetOrAdd(description, _ => _container.CreateInstance(activationScope, description));
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			private object CreateInstance(ServiceDescription description)
