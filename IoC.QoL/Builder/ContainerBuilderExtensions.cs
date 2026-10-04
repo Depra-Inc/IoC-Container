@@ -12,6 +12,13 @@ namespace Depra.IoC.QoL.Builder
 	public static class ContainerBuilderExtensions
 	{
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static IContainerBuilder NonLazy(this IContainerBuilder self)
+		{
+			self.LastRegistration.NonLazy = true;
+			return self;
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static IContainerBuilder RegisterTransient(this IContainerBuilder self, Type service, Type implementation)
 			=> self.RegisterType(service, implementation, LifetimeType.TRANSIENT);
 

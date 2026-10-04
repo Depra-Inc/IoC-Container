@@ -34,6 +34,7 @@ namespace Depra.IoC
 			_buildActivators = new ConcurrentDictionary<ServiceDescription, Func<IScope, object>>();
 
 			FillDescriptors(descriptors);
+			ResolveNonLazy();
 		}
 
 		public void Dispose() => _rootScope.Dispose();
@@ -77,6 +78,18 @@ namespace Depra.IoC
 			var argumentsDescriptor = new TypeBasedServiceDescription(genericType, service, typeBased.Lifetime);
 
 			return _descriptors.GetOrAdd(genericType, argumentsDescriptor);
+		}
+
+		private void ResolveNonLazy()
+		{
+			var resolved = new HashSet<ServiceDescription>();
+			foreach (var descriptor in _descriptors.Values)
+			{
+				if (descriptor.NonLazy && resolved.Add(descriptor))
+				{
+					_rootScope.ResolveInternal(descriptor);
+				}
+			}
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
