@@ -19,9 +19,7 @@ namespace Depra.IoC.Locator
 			var scope = _globalScope;
 			if (scope == null)
 			{
-				throw new InvalidOperationException(
-					"ServiceLocator is not initialized. " +
-					"Call 'ServiceLocator.Initialize' first.");
+				throw new ServiceLocator.NotInitialized();
 			}
 
 			return scope.Resolve<TService>();
