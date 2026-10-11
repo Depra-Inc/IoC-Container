@@ -230,8 +230,8 @@ namespace Depra.IoC
 			};
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			private object GetOrCreateSingleton(ServiceDescription description, IScope activationScope) => 
-				_scopedInstances.GetOrAdd(description, _ => _container.CreateInstance(activationScope, description));
+			private object GetOrCreateSingleton(ServiceDescription description, Scope activationScope) => 
+				_scopedInstances.GetOrAdd(description, _ => activationScope.CreateInstance(description));
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			private object CreateInstance(ServiceDescription description)
