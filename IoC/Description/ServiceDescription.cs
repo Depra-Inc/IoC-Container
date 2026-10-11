@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// © 2022-2024 Nikolay Melnikov <n.melnikov@depra.org>
+// © 2022-2026 Depra <n.melnikov@depra.org>
 
 using System;
 using Depra.IoC.Enums;
@@ -16,5 +16,6 @@ namespace Depra.IoC.Description
 
         public Type Type { get; }
         public LifetimeType Lifetime { get; }
+        public bool NonLazy { get; internal set; }
     }
 }

@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: Apache-2.0
-// © 2022-2025 Depra <n.melnikov@depra.org>
+// © 2022-2026 Depra <n.melnikov@depra.org>
 
 using System;
 using System.Collections;
@@ -42,7 +42,21 @@ namespace Depra.IoC
 			.DisposeAsync()
 			.ConfigureAwait(false);
 
-		public IScope CreateScope() => new Scope(this);
+		public IScope CreateScope()
+		{
+			var scope = new Scope(this, _rootScope);
+			ResolveNonLazy(scope);
+
+			return scope;
+		}
+
+		public IScope CreateScope(IScope parentScope)
+		{
+			var scope = new Scope(this, parentScope);
+			ResolveNonLazy(scope);
+
+			return scope;
+		}
 
 		private ServiceDescription FindDescriptor(Type service)
 		{
@@ -60,7 +74,7 @@ namespace Depra.IoC
 					: null;
 			}
 
-			if (service.IsConstructedGenericType == false)
+			if (!service.IsConstructedGenericType)
 			{
 				return null;
 			}
@@ -88,6 +102,7 @@ namespace Depra.IoC
 		{
 			InstanceBasedServiceDescription instanceBased => _ => instanceBased.Instance,
 			FactoryBasedServiceDescription factoryBased => factoryBased.Func,
+			MultipleServicesDescription multiple => BuildUsingMultipleDescriptor(multiple.Type, multiple).Func,
 			_ => activationBuilder.BuildActivation((TypeBasedServiceDescription) serviceDescription)
 		};
 
@@ -115,8 +130,8 @@ namespace Depra.IoC
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private static ServiceDescription BuildUsingMultipleDescriptor(Type serviceType, ServiceDescription description) =>
-			new FactoryBasedServiceDescription(serviceType, LifetimeType.TRANSIENT, scope =>
+		private static FactoryBasedServiceDescription BuildUsingMultipleDescriptor(Type serviceType, ServiceDescription description) =>
+			new(serviceType, LifetimeType.TRANSIENT, scope =>
 			{
 				var items = (description as MultipleServicesDescription)?.Descriptors ?? new[] { description };
 				var scopeImpl = (Scope) scope;
@@ -129,15 +144,30 @@ namespace Depra.IoC
 				return array;
 			});
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private void ResolveNonLazy(Scope scope)
+		{
+			var resolved = new HashSet<ServiceDescription>();
+			foreach (var description in _descriptors.Values)
+			{
+				if (description.NonLazy && resolved.Add(description))
+				{
+					scope.ResolveInternal(description);
+				}
+			}
+		}
+
 		private sealed class Scope : IScope
 		{
 			private readonly Container _container;
 			private readonly ConcurrentStack<object> _disposables;
 			private readonly ConcurrentDictionary<ServiceDescription, object> _scopedInstances;
+			private readonly IScope _parentScope;
 
-			public Scope(Container container)
+			public Scope(Container container, IScope parentScope = null)
 			{
 				_container = container;
+				_parentScope = parentScope;
 				_disposables = new ConcurrentStack<object>();
 				_scopedInstances = new ConcurrentDictionary<ServiceDescription, object>();
 			}
@@ -175,23 +205,33 @@ namespace Depra.IoC
 				}
 			}
 
-			public bool CanResolve(Type service) => _container.FindDescriptor(service) != null;
+			public bool CanResolve(Type service) =>
+				_container.FindDescriptor(service) != null ||
+				(_parentScope != null && _parentScope.CanResolve(service));
 
 			public object Resolve(Type service)
 			{
 				var descriptor = _container.FindDescriptor(service);
-				Guard.AgainstNull(descriptor, () => new UnableFindRegistration(service));
+				if (descriptor == null && _parentScope != null)
+				{
+					return _parentScope.Resolve(service);
+				}
 
+				Guard.AgainstNotRegistered(descriptor, service);
 				return ResolveInternal(descriptor);
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			internal object ResolveInternal(ServiceDescription description) =>
-				description.Lifetime == LifetimeType.TRANSIENT
-					? CreateInstance(description)
-					: description.Lifetime == LifetimeType.SCOPED || _container._rootScope == this
-						? _scopedInstances.GetOrAdd(description, _ => CreateInstance(description))
-						: _container._rootScope.ResolveInternal(description);
+			internal object ResolveInternal(ServiceDescription description) => description.Lifetime switch
+			{
+				LifetimeType.TRANSIENT => CreateInstance(description),
+				LifetimeType.SCOPED => _scopedInstances.GetOrAdd(description, _ => CreateInstance(description)),
+				_ => _container._rootScope.GetOrCreateSingleton(description, this)
+			};
+
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			private object GetOrCreateSingleton(ServiceDescription description, Scope activationScope) => 
+				_scopedInstances.GetOrAdd(description, _ => activationScope.CreateInstance(description));
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			private object CreateInstance(ServiceDescription description)
