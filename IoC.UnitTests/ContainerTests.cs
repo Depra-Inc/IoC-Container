@@ -206,16 +206,15 @@ internal sealed class ContainerTests
 		IActivationBuilder activationBuilder)
 	{
 		// Arrange:
-		var descriptor = new MultipleServicesDescription(lifetime: LifetimeType.TRANSIENT,
-			type: typeof(IEnumerable<Mocks.ITestService>), descriptors:
-			[
-				new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
-					type: typeof(Mocks.ITestService), implementationType: typeof(Mocks.TestService)),
-				new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
-					type: typeof(Mocks.ITestService), implementationType: typeof(Mocks.TestServiceWithEmptyConstructor))
-			]);
+		var descriptors = new ServiceDescription[]
+		{
+			new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
+				type: typeof(Mocks.ITestService), implementationType: typeof(Mocks.TestService)),
+			new TypeBasedServiceDescription(lifetime: LifetimeType.TRANSIENT,
+				type: typeof(Mocks.ITestService), implementationType: typeof(Mocks.TestServiceWithEmptyConstructor))
+		};
 
-		using var container = new Container(activationBuilder, [descriptor]);
+		using var container = new Container(activationBuilder, descriptors);
 		var scope = container.CreateScope();
 
 		// Act:
@@ -225,5 +224,54 @@ internal sealed class ContainerTests
 		services.Length.Should().Be(2);
 		services[0].Should().BeOfType<Mocks.TestService>();
 		services[1].Should().BeOfType<Mocks.TestServiceWithEmptyConstructor>();
+	}
+
+	[Test]
+	public void ResolveNonLazy_WhenNonLazyTypeHasDependencyInParentScope_ThenResolvedTypeEqualsToRegisteredType(
+		[ValueSource(nameof(GetActivationBuilders))]
+		IActivationBuilder activationBuilder)
+	{
+		// Arrange:
+		var parentContainer = new Container(activationBuilder, [
+			new TypeBasedServiceDescription(typeof(Mocks.TestServiceWithConstructor.Token),
+				typeof(Mocks.TestServiceWithConstructor.Token), LifetimeType.SINGLETON)
+		]);
+		var parentScope = parentContainer.CreateScope();
+		var childServiceDescription = new TypeBasedServiceDescription(typeof(Mocks.TestServiceWithConstructor),
+			typeof(Mocks.ITestService), LifetimeType.SINGLETON)
+		{
+			NonLazy = true
+		};
+		var childContainer = new Container(activationBuilder, [childServiceDescription]);
+
+		// Act:
+		var childScope = childContainer.CreateScope(parentScope);
+		var resolvedService = childScope.Resolve<Mocks.ITestService>();
+
+		// Assert:
+		resolvedService.Should().BeOfType<Mocks.TestServiceWithConstructor>();
+	}
+
+	[Test]
+	public void DisposeScope_WhenScopeIsNotDisposed_ThenDisposeIsCalledOnDisposableServices(
+		[ValueSource(nameof(GetLifetime))] LifetimeType lifetime,
+		[ValueSource(nameof(GetActivationBuilders))]
+		IActivationBuilder activationBuilder)
+	{
+		// Arrange:
+		var descriptors = new ServiceDescription[]
+		{
+			new TypeBasedServiceDescription(lifetime: lifetime,
+				type: typeof(Mocks.TestDisposableService), implementationType: typeof(Mocks.TestDisposableService))
+		};
+		using var container = new Container(activationBuilder, descriptors);
+		var scope = container.CreateScope();
+
+		// Act:
+		var service = scope.Resolve<Mocks.TestDisposableService>();
+		scope.Dispose();
+
+		// Assert:
+		service.IsDisposed.Should().BeTrue();
 	}
 }

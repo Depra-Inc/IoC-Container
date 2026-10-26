@@ -1,7 +1,6 @@
 ﻿// SPDX-License-Identifier: Apache-2.0
-// © 2022-2024 Nikolay Melnikov <n.melnikov@depra.org>
+// © 2022-2026 Depra <n.melnikov@depra.org>
 
-using System;
 using System.Collections.Generic;
 using Depra.IoC.Activation;
 using Depra.IoC.Description;
@@ -13,6 +12,7 @@ namespace Depra.IoC.QoL.Builder
 	{
 		private readonly IActivationBuilder _activationBuilder;
 		private readonly List<ServiceDescription> _descriptions;
+		private ServiceDescription _lastRegistration;
 
 		public ContainerBuilder(IActivationBuilder activationBuilder)
 		{
@@ -22,10 +22,14 @@ namespace Depra.IoC.QoL.Builder
 			_descriptions = new List<ServiceDescription>();
 		}
 
-		public bool Exists(Type service) => _descriptions.Exists(x => x.Type == service);
+		ServiceDescription IContainerBuilder.LastRegistration => _lastRegistration;
 
 		public IContainer Build() => new Container(_activationBuilder, _descriptions);
 
-		public void Register(ServiceDescription description) => _descriptions.Add(description);
+		void IContainerBuilder.Register(ServiceDescription description)
+		{
+			_lastRegistration = description;
+			_descriptions.Add(description);
+		}
 	}
 }

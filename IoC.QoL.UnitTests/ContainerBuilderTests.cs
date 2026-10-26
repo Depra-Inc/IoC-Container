@@ -32,7 +32,7 @@ internal sealed class ContainerBuilderTests
 	{
 		// Arrange:
 		var implementationType = typeof(Mocks.TestService);
-		using var container = new Builder.ContainerBuilder(activationBuilder)
+		using var container = new ContainerBuilder(activationBuilder)
 			.RegisterType(implementationType, implementationType, lifetime)
 			.Build();
 		var scope = container.CreateScope();
@@ -53,7 +53,7 @@ internal sealed class ContainerBuilderTests
 		// Arrange:
 		var interfaceType = typeof(Mocks.ITestService);
 		var implementationType = typeof(Mocks.TestService);
-		using var container = new Builder.ContainerBuilder(activationBuilder)
+		using var container = new ContainerBuilder(activationBuilder)
 			.RegisterType(interfaceType, implementationType, lifetime)
 			.Build();
 		var scope = container.CreateScope();
@@ -71,7 +71,7 @@ internal sealed class ContainerBuilderTests
 		IActivationBuilder activationBuilder)
 	{
 		// Arrange:
-		using var container = new Builder.ContainerBuilder(activationBuilder).Build();
+		using var container = new ContainerBuilder(activationBuilder).Build();
 		var scope = container.CreateScope();
 
 		// Act:
@@ -87,7 +87,7 @@ internal sealed class ContainerBuilderTests
 		IActivationBuilder activationBuilder)
 	{
 		// Arrange:
-		using var container = new Builder.ContainerBuilder(activationBuilder)
+		using var container = new ContainerBuilder(activationBuilder)
 			.RegisterTransient<Mocks.ITestService, Mocks.TestServiceWithEmptyConstructor>()
 			.Build();
 		var scope = container.CreateScope();
@@ -105,7 +105,7 @@ internal sealed class ContainerBuilderTests
 		IActivationBuilder activationBuilder)
 	{
 		// Arrange:
-		using var container = new Builder.ContainerBuilder(activationBuilder)
+		using var container = new ContainerBuilder(activationBuilder)
 			.RegisterSingleton<Mocks.TestServiceWithConstructor.Token>()
 			.RegisterTransient<Mocks.ITestService, Mocks.TestServiceWithConstructor>()
 			.Build();
@@ -124,7 +124,7 @@ internal sealed class ContainerBuilderTests
 		IActivationBuilder activationBuilder)
 	{
 		// Arrange:
-		using var container = new Builder.ContainerBuilder(activationBuilder)
+		using var container = new ContainerBuilder(activationBuilder)
 			.RegisterTransient<Mocks.EmptyGeneric>()
 			.RegisterTransient<Mocks.GenericTestService<Mocks.EmptyGeneric>>()
 			.Build();
@@ -143,7 +143,7 @@ internal sealed class ContainerBuilderTests
 		IActivationBuilder activationBuilder)
 	{
 		// Arrange:
-		using var container = new Builder.ContainerBuilder(activationBuilder)
+		using var container = new ContainerBuilder(activationBuilder)
 			.RegisterTransient<Mocks.EmptyGeneric>()
 			.RegisterTransient<Mocks.EnumerableTestService>()
 			.Build();

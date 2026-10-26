@@ -36,5 +36,12 @@ namespace Depra.IoC.Locator
 				Service.SetScope(null);
 			}
 		}
+
+		internal sealed class NotInitialized : Exception
+		{
+			public NotInitialized() : base(
+				"ServiceLocator is not initialized." +
+				"Call ServiceLocator.Initialize(scope) first.") { }
+		}
 	}
 }

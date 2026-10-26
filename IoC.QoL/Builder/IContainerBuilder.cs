@@ -1,16 +1,15 @@
 ﻿// SPDX-License-Identifier: Apache-2.0
-// © 2022-2024 Nikolay Melnikov <n.melnikov@depra.org>
+// © 2022-2026 Depra <n.melnikov@depra.org>
 
-using System;
 using Depra.IoC.Description;
 
 namespace Depra.IoC.QoL.Builder
 {
 	public interface IContainerBuilder
 	{
-		IContainer Build();
+		internal ServiceDescription LastRegistration { get; }
 
-		bool Exists(Type service);
+		IContainer Build();
 
 		void Register(ServiceDescription description);
 	}
