@@ -5,8 +5,8 @@ using Depra.IoC.QoL.Builder;
 
 namespace Depra.IoC.Composition
 {
-	public interface ILifetimeScope
+	public interface IInstaller
 	{
-		void Configure(IContainerBuilder builder);
+		void Install(IContainerBuilder builder);
 	}
 }
