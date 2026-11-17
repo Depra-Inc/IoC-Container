@@ -86,11 +86,19 @@ namespace Depra.IoC
 				return null;
 			}
 
-			var genericArguments = service.GetGenericArguments();
-			var genericType = typeBased.ImplementationType.MakeGenericType(genericArguments);
+			Type genericType;
+			try
+			{
+				genericType = typeBased.ImplementationType.MakeGenericType(service.GetGenericArguments());
+			}
+			catch (ArgumentException exception)
+			{
+				throw new GenericArgumentsMismatch(service, typeBased.ImplementationType, exception);
+			}
+
 			var argumentsDescriptor = new TypeBasedServiceDescription(genericType, service, typeBased.Lifetime);
 
-			return _descriptors.GetOrAdd(genericType, argumentsDescriptor);
+			return _descriptors.GetOrAdd(service, argumentsDescriptor);
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -152,7 +160,15 @@ namespace Depra.IoC
 			{
 				if (description.NonLazy && resolved.Add(description))
 				{
-					scope.ResolveInternal(description);
+					try
+					{
+						scope.ResolveInternal(description);
+					}
+					catch (DependencyResolutionException exception)
+					{
+						exception.PushConsumer(description);
+						throw;
+					}
 				}
 			}
 		}
@@ -205,9 +221,18 @@ namespace Depra.IoC
 				}
 			}
 
-			public bool CanResolve(Type service) =>
-				_container.FindDescriptor(service) != null ||
-				(_parentScope != null && _parentScope.CanResolve(service));
+			public bool CanResolve(Type service)
+			{
+				try
+				{
+					return _container.FindDescriptor(service) != null ||
+					       (_parentScope != null && _parentScope.CanResolve(service));
+				}
+				catch (GenericArgumentsMismatch)
+				{
+					return false;
+				}
+			}
 
 			public object Resolve(Type service)
 			{
@@ -217,8 +242,20 @@ namespace Depra.IoC
 					return _parentScope.Resolve(service);
 				}
 
-				Guard.AgainstNotRegistered(descriptor, service);
-				return ResolveInternal(descriptor);
+				if (descriptor == null)
+				{
+					throw new UnableFindRegistration(service);
+				}
+
+				try
+				{
+					return ResolveInternal(descriptor);
+				}
+				catch (DependencyResolutionException exception)
+				{
+					exception.PushConsumer(descriptor);
+					throw;
+				}
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]

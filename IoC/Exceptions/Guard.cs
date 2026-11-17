@@ -19,16 +19,6 @@ namespace Depra.IoC.Exceptions
 			}
 		}
 
-		[Conditional(Conditional.ENSURE)]
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void AgainstNotRegistered(object value, Type serviceType)
-		{
-			if (value == null)
-			{
-				throw new UnableFindRegistration(serviceType);
-			}
-		}
-
 		private static class Conditional
 		{
 			// ReSharper disable UnusedMember.Local

@@ -5,8 +5,16 @@ using System;
 
 namespace Depra.IoC.Exceptions
 {
-	internal sealed class UnableFindRegistration : Exception
+	internal sealed class UnableFindRegistration : DependencyResolutionException
 	{
-		public UnableFindRegistration(Type service) : base($"Unable to find registration for {service.Name}") { }
+		private readonly Type _service;
+
+		public UnableFindRegistration(Type service)
+		{
+			_service = service;
+			PushFailed(service);
+		}
+
+		protected override string Reason => $"No registration for '{_service.ToReadableName()}'";
 	}
 }

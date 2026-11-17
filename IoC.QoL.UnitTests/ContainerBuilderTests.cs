@@ -64,7 +64,6 @@ internal sealed class ContainerBuilderTests
 		// Assert:
 		service.Should().BeOfType(implementationType);
 	}
-#if DEBUG
 	[Test]
 	public void ResolveByType_WhenTypeNotRegisteredInContainer_ThrowsInvalidOperationException(
 		[ValueSource(nameof(GetActivationBuilders))]
@@ -80,7 +79,6 @@ internal sealed class ContainerBuilderTests
 		// Assert:
 		act.Should().Throw<UnableFindRegistration>();
 	}
-#endif
 	[Test]
 	public void ResolveType_WhenTypeConstructorIsEmpty_ThenResolvedTypeEqualsToRegisteredType(
 		[ValueSource(nameof(GetActivationBuilders))]

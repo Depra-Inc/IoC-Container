@@ -1,14 +1,16 @@
 ﻿// SPDX-License-Identifier: Apache-2.0
-// © 2022-2024 Nikolay Melnikov <n.melnikov@depra.org>
+// © 2022-2026 Depra <n.melnikov@depra.org>
 
 using System;
-using System.Reflection;
 
 namespace Depra.IoC.Exceptions
 {
-	internal sealed class SuitableConstructorNotFound : Exception
+	internal sealed class SuitableConstructorNotFound : DependencyResolutionException
 	{
-		public SuitableConstructorNotFound(MemberInfo type) :
-			base($"No suitable constructor for '{type.Name}' found!") { }
+		private readonly Type _implementation;
+
+		public SuitableConstructorNotFound(Type implementation) => _implementation = implementation;
+
+		protected override string Reason => $"No public constructor in '{_implementation.ToReadableName()}'";
 	}
 }
